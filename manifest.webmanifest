@@ -1,0 +1,23 @@
+{
+  "id": "/portal.html",
+  "name": "PetCare · Cuidado que conecta",
+  "short_name": "PetCare",
+  "description": "El espacio de cuidado y conexión con tu clínica veterinaria.",
+  "lang": "es-AR",
+  "start_url": "/portal.html?source=install",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f4f8f5",
+  "theme_color": "#326b52",
+  "categories": ["health", "lifestyle"],
+  "icons": [
+    {"src": "/icons/petcare-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "/icons/petcare-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"},
+    {"src": "/icons/petcare.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"}
+  ],
+  "shortcuts": [
+    {"name": "Pedir un turno", "short_name": "Turno", "url": "/portal.html#turnos", "icons": [{"src": "/icons/petcare-192.png", "sizes": "192x192", "type": "image/png"}]},
+    {"name": "Historial médico", "short_name": "Historial", "url": "/portal.html#historial", "icons": [{"src": "/icons/petcare-192.png", "sizes": "192x192", "type": "image/png"}]}
+  ]
+}

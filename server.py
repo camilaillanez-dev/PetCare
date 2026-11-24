@@ -276,6 +276,10 @@ class Handler(SimpleHTTPRequestHandler):
     def __init__(self,*args,**kwargs):
         super().__init__(*args,directory=str(BASE),**kwargs)
 
+    def guess_type(self,path):
+        if path.lower().endswith(".webmanifest"): return "application/manifest+json"
+        return super().guess_type(path)
+
     def end_headers(self):
         self.send_header("X-Content-Type-Options","nosniff")
         self.send_header("Referrer-Policy","same-origin")

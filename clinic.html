@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f6f8f4"><title>PetCare | Panel clínico</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" href="#inicio" aria-label="PetCare inicio"><span class="brand-mark">✿</span><span>petcare<small>CLÍNICA VETERINARIA</small></span></a>
+    <div class="clinic-switch"><span class="clinic-dot"></span><span><b>Clínica Patitas</b><small>Buenos Aires · Sucursal Centro</small></span><span class="chev">⌄</span></div>
+    <div class="nav-label">ESPACIO DE TRABAJO</div>
+    <nav class="nav" aria-label="Navegación principal">
+      <button class="nav-item active" data-page="inicio"><span>▦</span> Resumen</button>
+      <button class="nav-item" data-page="pacientes"><span>♡</span> Pacientes <i id="nav-patient-count">5</i></button>
+      <button class="nav-item" data-page="agenda"><span>▣</span> Agenda <i class="nav-alert">4</i></button>
+      <button class="nav-item" data-page="inbox"><span>◌</span> Inbox <i class="nav-alert" id="nav-inbox-count">3</i></button>
+      <div class="nav-label nav-label-spaced">ASISTENCIA CLÍNICA</div>
+      <button class="nav-item" data-page="soap"><span>▤</span> Notas SOAP</button>
+      <button class="nav-item" data-page="seguimiento"><span>↗</span> Seguimiento</button>
+      <button class="nav-item" data-page="teleconsulta"><span>▻</span> Teleconsulta</button>
+      <button class="nav-item" data-page="operaciones"><span>◷</span> Operaciones</button><a class="nav-item" href="/portal.html"><span>⌂</span> Portal tutores</a>
+    </nav>
+    <div class="sidebar-bottom"><div class="help-card"><span class="help-icon">✦</span><b>¿Necesitás ayuda?</b><p>Estamos acá para acompañar a tu equipo.</p><button data-toast="El equipo de ayuda está disponible de lunes a viernes.">Contactar soporte <span>↗</span></button></div><div class="profile"><div class="avatar avatar-lilac">CM</div><span><b>Camila Méndez</b><small>Administradora</small></span><button class="more" aria-label="Más opciones">···</button></div></div>
+  </aside>
+  <main class="main-area">
+    <header class="topbar"><div class="crumb"><span>Clínica Patitas</span><b>/</b><strong id="crumb-page">Resumen</strong></div><div class="top-actions"><span class="connection-pill" id="connection-status">● Conectando datos locales</span><span class="today-label" id="today-label"></span><button class="icon-btn" data-toast="No tenés notificaciones nuevas." aria-label="Notificaciones">♧<em></em></button><div class="avatar avatar-lilac">CM</div></div></header>
+    <section id="page-root" class="page-root"></section>
+  </main>
+</div>
+<div id="modal-root"></div><div id="toast" class="toast" role="status"></div>
+<script src="app.js"></script>
+</body></html>
+
+
+
+

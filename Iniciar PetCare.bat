@@ -28,5 +28,5 @@ if "%PETCARE_PY%"=="py -3" (
 timeout /t 2 /nobreak >nul
 
 :open_app
-start "" "http://127.0.0.1:8765"
+start "" "http://127.0.0.1:8765/clinic.html"
 endlocal
