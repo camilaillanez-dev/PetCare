@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import hashlib
 import hmac
+import math
 import os
 import re
 import secrets
@@ -122,6 +123,24 @@ def init_db():
           id INTEGER PRIMARY KEY, title TEXT NOT NULL, description TEXT NOT NULL,
           sent INTEGER NOT NULL DEFAULT 0, response_rate TEXT NOT NULL DEFAULT '0%', active INTEGER NOT NULL DEFAULT 0
         );
+        CREATE TABLE IF NOT EXISTS inventory_items (
+          id INTEGER PRIMARY KEY, name TEXT NOT NULL, category TEXT NOT NULL DEFAULT 'General',
+          sku TEXT NOT NULL DEFAULT '', unit TEXT NOT NULL DEFAULT 'unidad', quantity REAL NOT NULL DEFAULT 0 CHECK(quantity>=0),
+          minimum_quantity REAL NOT NULL DEFAULT 0 CHECK(minimum_quantity>=0), expiration_date TEXT NOT NULL DEFAULT '',
+          updated_at TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS stock_movements (
+          id INTEGER PRIMARY KEY, item_id INTEGER NOT NULL REFERENCES inventory_items(id) ON DELETE CASCADE,
+          movement_type TEXT NOT NULL, delta REAL NOT NULL, balance_after REAL NOT NULL,
+          reason TEXT NOT NULL DEFAULT '', actor TEXT NOT NULL DEFAULT 'Clínica', created_at TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS care_events (
+          id INTEGER PRIMARY KEY, patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+          owner_id INTEGER REFERENCES owners(id) ON DELETE SET NULL, event_type TEXT NOT NULL,
+          title TEXT NOT NULL, description TEXT NOT NULL DEFAULT '', due_date TEXT NOT NULL, due_time TEXT NOT NULL DEFAULT '',
+          owner_visible INTEGER NOT NULL DEFAULT 1, source TEXT NOT NULL DEFAULT 'Clínica',
+          status TEXT NOT NULL DEFAULT 'Pendiente', created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+        );
         CREATE TABLE IF NOT EXISTS soap_notes (
           id INTEGER PRIMARY KEY, patient_name TEXT NOT NULL, subjective TEXT NOT NULL DEFAULT '',
           objective TEXT NOT NULL DEFAULT '', assessment TEXT NOT NULL DEFAULT '', plan TEXT NOT NULL DEFAULT '',
@@ -139,6 +158,9 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_appointments_date ON appointments(appt_date, time);
         CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id, id);
         CREATE INDEX IF NOT EXISTS idx_medical_records_patient ON medical_records(patient_id, visit_date DESC);
+        CREATE INDEX IF NOT EXISTS idx_stock_movements_item ON stock_movements(item_id, id DESC);
+        CREATE INDEX IF NOT EXISTS idx_care_events_date ON care_events(due_date, status);
+        CREATE INDEX IF NOT EXISTS idx_care_events_patient ON care_events(patient_id, due_date);
         """)
         ensure_column(db, "patients", "owner_id", "INTEGER REFERENCES owners(id) ON DELETE SET NULL")
         ensure_column(db, "appointments", "duration_min", "INTEGER NOT NULL DEFAULT 30")
@@ -150,6 +172,23 @@ def init_db():
         if db.execute("SELECT COUNT(*) FROM patients").fetchone()[0] == 0:
             seed(db)
         ensure_demo_accounts(db)
+        if db.execute("SELECT COUNT(*) FROM inventory_items").fetchone()[0] == 0:
+            stock_seed = [
+                ("Vacuna triple felina", "Vacunas", "VAC-FEL-01", "dosis", 18, 6, (date.today()+timedelta(days=140)).isoformat()),
+                ("Vacuna antirrábica", "Vacunas", "VAC-RAB-01", "dosis", 12, 4, (date.today()+timedelta(days=82)).isoformat()),
+                ("Antiparasitario canino", "Farmacia", "ANT-CAN-02", "unidad", 24, 8, (date.today()+timedelta(days=210)).isoformat()),
+                ("Jeringa descartable 3 ml", "Insumos", "INS-JER-03", "unidad", 90, 25, ""),
+            ]
+            for name,category,sku,unit,quantity,minimum,expiry in stock_seed:
+                cur=db.execute("INSERT INTO inventory_items(name,category,sku,unit,quantity,minimum_quantity,expiration_date,updated_at) VALUES(?,?,?,?,?,?,?,?)",(name,category,sku,unit,quantity,minimum,expiry,datetime.now().isoformat(timespec="seconds")))
+                db.execute("INSERT INTO stock_movements(item_id,movement_type,delta,balance_after,reason,actor,created_at) VALUES(?,?,?,?,?,?,?)",(cur.lastrowid,"Ingreso inicial",quantity,quantity,"Carga de demostración","Sistema",datetime.now().isoformat(timespec="seconds")))
+        if db.execute("SELECT COUNT(*) FROM care_events").fetchone()[0] == 0:
+            care_seed = [("Mia","Vacuna","Refuerzo de vacuna triple","Refuerzo preventivo · confirmar disponibilidad con la clínica.",4),("Toto","Control","Control de seguimiento","Recordatorio de control para el equipo y su tutor.",2),("Simón","Vacuna","Refuerzo anual","Revisar cartilla y coordinar el refuerzo.",9),("Lola","Control","Control preventivo","Recordatorio de cuidado preventivo.",8)]
+            for patient_name,event_type,title,description,days in care_seed:
+                patient=db.execute("SELECT id,owner_id FROM patients WHERE name=? LIMIT 1",(patient_name,)).fetchone()
+                if patient:
+                    due=(date.today()+timedelta(days=days)).isoformat(); now=datetime.now().isoformat(timespec="seconds")
+                    db.execute("INSERT INTO care_events(patient_id,owner_id,event_type,title,description,due_date,due_time,owner_visible,source,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,1,'Clínica','Pendiente',?,?)",(patient["id"],patient["owner_id"],event_type,title,description,due,"",now,now))
 
 
 def seed(db):
@@ -203,13 +242,20 @@ def bootstrap():
             chats.append({"id":c["id"],"name":c["owner"],"pet":c["pet_label"],"icon":c["icon"],"preview":c["preview"],"time":"reciente","status":c["status"],"messages":msgs})
         reminders = [dict(r) for r in db.execute("SELECT * FROM reminders ORDER BY id")]
         notes = [dict(r) for r in db.execute("SELECT * FROM soap_notes ORDER BY updated_at DESC")]
+        care_events = [dict(r) for r in db.execute("SELECT e.id,e.patient_id,e.event_type,e.title,e.description,e.due_date AS date,e.due_time AS time,e.owner_visible,e.source,e.status,p.name AS patient_name,p.owner,p.icon FROM care_events e JOIN patients p ON p.id=e.patient_id WHERE e.due_date<=? ORDER BY e.due_date,e.due_time",((date.today()+timedelta(days=90)).isoformat(),))]
+        for event in care_events: event["event_kind"]="recordatorio"
+        for row in db.execute("SELECT id,appt_date AS date,time,kind,patient_name,doctor,status,duration_min,priority,source,icon FROM appointments WHERE appt_date>=? AND appt_date<=? ORDER BY appt_date,time",(date.today().isoformat(),(date.today()+timedelta(days=90)).isoformat())):
+            event=dict(row); event.update({"event_type":"Turno","title":f"{row['kind']} · {row['patient_name']}","description":row["doctor"],"event_kind":"turno","owner_visible":1}) ; care_events.append(event)
+        care_events.sort(key=lambda event:(event["date"],event.get("time", ""),event["title"]))
+        stock_items=[dict(r) for r in db.execute("SELECT * FROM inventory_items ORDER BY CASE WHEN quantity<=minimum_quantity THEN 0 ELSE 1 END,name COLLATE NOCASE")]
+        stock_movements=[dict(r) for r in db.execute("SELECT m.*,i.name AS item_name,i.unit FROM stock_movements m JOIN inventory_items i ON i.id=m.item_id ORDER BY m.id DESC LIMIT 80")]
         metrics = {
           "today_appointments": db.execute("SELECT COUNT(*) FROM appointments WHERE appt_date=?",(date.today().isoformat(),)).fetchone()[0],
           "patients": db.execute("SELECT COUNT(*) FROM patients").fetchone()[0],
           "open_conversations": db.execute("SELECT COUNT(*) FROM conversations WHERE status!='Cerrada'").fetchone()[0],
-          "vaccines_due": db.execute("SELECT COUNT(*) FROM patients WHERE next_event LIKE '%Vacuna%'").fetchone()[0],
+          "vaccines_due": db.execute("SELECT COUNT(*) FROM care_events WHERE event_type='Vacuna' AND status='Pendiente' AND due_date BETWEEN ? AND ?",(date.today().isoformat(),(date.today()+timedelta(days=14)).isoformat())).fetchone()[0],
         }
-    return {"pets":pets,"appointments":appts,"today_appointments":today_appts,"chats":chats,"reminders":reminders,"notes":notes,"date":date.today().isoformat(),"metrics":metrics}
+    return {"pets":pets,"appointments":appts,"today_appointments":today_appts,"chats":chats,"reminders":reminders,"care_events":care_events,"stock_items":stock_items,"stock_movements":stock_movements,"notes":notes,"date":date.today().isoformat(),"metrics":metrics}
 
 
 def clean_text(value, field, required=False, limit=160):
@@ -267,6 +313,7 @@ def portal_data(owner_id):
         for pet in pets:
             pet["history"] = [dict(r) for r in db.execute("SELECT id,visit_date,title,professional,summary,record_type FROM medical_records WHERE patient_id=? AND visible_to_owner=1 ORDER BY visit_date DESC", (pet["id"],))]
             pet["appointments"] = [dict(r) for r in db.execute("SELECT id,appt_date,time,kind,status,duration_min,priority FROM appointments WHERE patient_id=? AND appt_date>=? AND status NOT IN ('Cancelado','Rechazado') ORDER BY appt_date,time LIMIT 8", (pet["id"],date.today().isoformat()))]
+            pet["reminders"] = [dict(r) for r in db.execute("SELECT id,event_type,title,description,due_date,due_time,status,source FROM care_events WHERE patient_id=? AND owner_id=? AND owner_visible=1 AND status!='Cancelado' AND due_date>=? ORDER BY due_date,due_time", (pet["id"],owner_id,date.today().isoformat()))]
     return {"owner":dict(owner),"pets":pets}
 
 
@@ -332,6 +379,15 @@ class Handler(SimpleHTTPRequestHandler):
             owner=self._need_owner()
             if not owner: return
             return self._json(200,portal_data(owner["id"]))
+        if path=="/api/stock":
+            with database() as db:
+                items=[dict(r) for r in db.execute("SELECT * FROM inventory_items ORDER BY CASE WHEN quantity<=minimum_quantity THEN 0 ELSE 1 END,name COLLATE NOCASE")]
+                movements=[dict(r) for r in db.execute("SELECT m.*,i.name AS item_name,i.unit FROM stock_movements m JOIN inventory_items i ON i.id=m.item_id ORDER BY m.id DESC LIMIT 100")]
+            return self._json(200,{"items":items,"movements":movements})
+        if path=="/api/care-events":
+            with database() as db:
+                events=[dict(r) for r in db.execute("SELECT e.id,e.patient_id,e.owner_id,e.event_type,e.title,e.description,e.due_date AS date,e.due_time AS time,e.owner_visible,e.source,e.status,p.name AS patient_name,p.owner,p.icon FROM care_events e JOIN patients p ON p.id=e.patient_id ORDER BY e.due_date,e.due_time")]
+            return self._json(200,events)
         if path=="/api/availability":
             params=parse_qs(urlparse(self.path).query)
             appt_date=params.get("date",[""])[0]; kind=unquote(params.get("kind",["Consulta general"])[0])
@@ -414,6 +470,64 @@ class Handler(SimpleHTTPRequestHandler):
                     cur=db.execute("INSERT INTO appointments(appt_date,time,patient_id,patient_name,kind,doctor,status,icon,color,created_at,duration_min,priority,source) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",(appt_date,appt_time,patient["id"],patient["name"],kind,"A asignar","Solicitud recibida",patient["icon"],patient["color"],datetime.now().isoformat(timespec="seconds"),duration,"Normal","Portal"))
                     row=db.execute("SELECT id,appt_date,time,kind,status,duration_min FROM appointments WHERE id=?",(cur.lastrowid,)).fetchone()
                 return self._json(201,dict(row))
+            if path=="/api/portal/reminders":
+                owner=self._need_owner()
+                if not owner: return
+                patient_id=int(body.get("patient_id",0)); event_type=clean_text(body.get("event_type","Personalizado"),"Tipo",True,30)
+                if event_type not in ("Vacuna","Control","Medicación","Personalizado"): return self._json(400,{"error":"Elegí un tipo de recordatorio válido."})
+                title=clean_text(body.get("title"),"Título",True,120); description=clean_text(body.get("description",""),"Detalle",False,500); due_date=clean_text(body.get("date"),"Fecha",True,10); due_time=clean_text(body.get("time",""),"Hora",False,5)
+                datetime.strptime(due_date,"%Y-%m-%d")
+                if due_date<date.today().isoformat(): raise ValueError("La fecha debe ser hoy o posterior.")
+                if due_time: datetime.strptime(due_time,"%H:%M")
+                now=datetime.now().isoformat(timespec="seconds")
+                with database() as db:
+                    patient=db.execute("SELECT id FROM patients WHERE id=? AND owner_id=?",(patient_id,owner["id"])).fetchone()
+                    if not patient: return self._json(404,{"error":"No encontramos esa mascota en tu cuenta."})
+                    cur=db.execute("INSERT INTO care_events(patient_id,owner_id,event_type,title,description,due_date,due_time,owner_visible,source,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,1,'Tutor','Pendiente',?,?)",(patient_id,owner["id"],event_type,title,description,due_date,due_time,now,now))
+                    row=db.execute("SELECT id,event_type,title,description,due_date,due_time,status,source FROM care_events WHERE id=?",(cur.lastrowid,)).fetchone()
+                return self._json(201,dict(row))
+            if path=="/api/stock/items":
+                name=clean_text(body.get("name"),"Nombre",True,100); category=clean_text(body.get("category","General"),"Categoría",False,50) or "General"; sku=clean_text(body.get("sku",""),"Código",False,40); unit=clean_text(body.get("unit","unidad"),"Unidad",True,20)
+                quantity=float(body.get("quantity",0)); minimum=float(body.get("minimum_quantity",0)); expiration=clean_text(body.get("expiration_date",""),"Vencimiento",False,10)
+                if not math.isfinite(quantity) or not math.isfinite(minimum) or quantity<0 or minimum<0: raise ValueError("El stock y el mínimo deben ser números iguales o mayores a cero.")
+                if expiration: datetime.strptime(expiration,"%Y-%m-%d")
+                now=datetime.now().isoformat(timespec="seconds")
+                with database() as db:
+                    cur=db.execute("INSERT INTO inventory_items(name,category,sku,unit,quantity,minimum_quantity,expiration_date,updated_at) VALUES(?,?,?,?,?,?,?,?)",(name,category,sku,unit,quantity,minimum,expiration,now))
+                    if quantity: db.execute("INSERT INTO stock_movements(item_id,movement_type,delta,balance_after,reason,actor,created_at) VALUES(?, 'Ingreso inicial', ?, ?, 'Carga inicial', 'Clínica', ?)",(cur.lastrowid,quantity,quantity,now))
+                    item=db.execute("SELECT * FROM inventory_items WHERE id=?",(cur.lastrowid,)).fetchone()
+                return self._json(201,dict(item))
+            if path=="/api/stock/movements":
+                item_id=int(body.get("item_id",0)); movement_type=clean_text(body.get("movement_type"),"Movimiento",True,20); amount=float(body.get("quantity",0)); reason=clean_text(body.get("reason"),"Motivo",True,200)
+                if movement_type not in ("Entrada","Salida","Ajuste"): return self._json(400,{"error":"Elegí entrada, salida o ajuste."})
+                if not math.isfinite(amount) or amount<=0: raise ValueError("Ingresá una cantidad mayor a cero.")
+                now=datetime.now().isoformat(timespec="seconds")
+                with database() as db:
+                    item=db.execute("SELECT * FROM inventory_items WHERE id=?",(item_id,)).fetchone()
+                    if not item: return self._json(404,{"error":"Producto no encontrado."})
+                    before=float(item["quantity"]); after=amount if movement_type=="Ajuste" else before+(amount if movement_type=="Entrada" else -amount)
+                    if after<0: return self._json(400,{"error":f"No hay stock suficiente. Disponible: {before:g} {item['unit']}."})
+                    delta=after-before
+                    db.execute("UPDATE inventory_items SET quantity=?,updated_at=? WHERE id=?",(after,now,item_id))
+                    cur=db.execute("INSERT INTO stock_movements(item_id,movement_type,delta,balance_after,reason,actor,created_at) VALUES(?,?,?,?,?,'Clínica',?)",(item_id,movement_type,delta,after,reason,now))
+                    movement=db.execute("SELECT m.*,i.name AS item_name,i.unit FROM stock_movements m JOIN inventory_items i ON i.id=m.item_id WHERE m.id=?",(cur.lastrowid,)).fetchone()
+                return self._json(201,dict(movement))
+            if path=="/api/care-events":
+                patient_id=int(body.get("patient_id",0)); event_type=clean_text(body.get("event_type"),"Tipo",True,30)
+                if event_type not in ("Vacuna","Control","Medicación","Seguimiento","Turno","Personalizado"): return self._json(400,{"error":"Elegí un tipo de recordatorio válido."})
+                title=clean_text(body.get("title"),"Título",True,120); description=clean_text(body.get("description",""),"Detalle",False,500); due_date=clean_text(body.get("date"),"Fecha",True,10); due_time=clean_text(body.get("time",""),"Hora",False,5); owner_visible=body.get("owner_visible",True)
+                if not isinstance(owner_visible,bool): raise ValueError("La opción para compartir debe ser verdadera o falsa.")
+                datetime.strptime(due_date,"%Y-%m-%d")
+                if due_date<date.today().isoformat(): raise ValueError("La fecha debe ser hoy o posterior.")
+                if due_time: datetime.strptime(due_time,"%H:%M")
+                now=datetime.now().isoformat(timespec="seconds")
+                with database() as db:
+                    patient=db.execute("SELECT id,owner_id FROM patients WHERE id=?",(patient_id,)).fetchone()
+                    if not patient: return self._json(404,{"error":"Paciente no encontrado."})
+                    cur=db.execute("INSERT INTO care_events(patient_id,owner_id,event_type,title,description,due_date,due_time,owner_visible,source,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?, 'Clínica','Pendiente',?,?)",(patient_id,patient["owner_id"],event_type,title,description,due_date,due_time,int(owner_visible),now,now))
+                    if event_type in ("Vacuna","Control"): db.execute("UPDATE patients SET next_event=?,status='Control próximo' WHERE id=?",(f"{event_type} · {due_date}",patient_id))
+                    event=db.execute("SELECT e.id,e.patient_id,e.event_type,e.title,e.description,e.due_date AS date,e.due_time AS time,e.owner_visible,e.source,e.status,p.name AS patient_name,p.owner,p.icon FROM care_events e JOIN patients p ON p.id=e.patient_id WHERE e.id=?",(cur.lastrowid,)).fetchone()
+                return self._json(201,dict(event))
             if path=="/api/patients":
                 name=clean_text(body.get("name"),"Nombre",True,80); species=clean_text(body.get("species"),"Especie",True,80); owner=clean_text(body.get("owner"),"Tutor",True,100)
                 phone=clean_text(body.get("phone",""),"Teléfono",False,32); age=clean_text(body.get("age",""),"Edad",False,40); icon=clean_text(body.get("icon","🐾"),"Ícono",False,8)
@@ -473,6 +587,24 @@ class Handler(SimpleHTTPRequestHandler):
         path=urlparse(self.path).path
         try:
             body=self._body()
+            if path.startswith("/api/care-events/"):
+                event_id=int(path.rsplit("/",1)[1]); status=clean_text(body.get("status"),"Estado",True,20)
+                if status not in ("Pendiente","Completado","Cancelado"): return self._json(400,{"error":"El estado no es válido."})
+                with database() as db:
+                    cur=db.execute("UPDATE care_events SET status=?,updated_at=? WHERE id=?",(status,datetime.now().isoformat(timespec="seconds"),event_id))
+                    if not cur.rowcount: return self._json(404,{"error":"Recordatorio no encontrado."})
+                    row=db.execute("SELECT id,status FROM care_events WHERE id=?",(event_id,)).fetchone()
+                return self._json(200,dict(row))
+            if path.startswith("/api/portal/reminders/"):
+                owner=self._need_owner()
+                if not owner: return
+                event_id=int(path.rsplit("/",1)[1]); status=clean_text(body.get("status"),"Estado",True,20)
+                if status not in ("Pendiente","Completado"): return self._json(400,{"error":"El estado no es válido."})
+                with database() as db:
+                    cur=db.execute("UPDATE care_events SET status=?,updated_at=? WHERE id=? AND owner_id=? AND owner_visible=1",(status,datetime.now().isoformat(timespec="seconds"),event_id,owner["id"]))
+                    if not cur.rowcount: return self._json(404,{"error":"Recordatorio no encontrado."})
+                    row=db.execute("SELECT id,status FROM care_events WHERE id=?",(event_id,)).fetchone()
+                return self._json(200,dict(row))
             if path.startswith("/api/reminders/"):
                 rid=int(path.rsplit("/",1)[1]); active=body.get("active")
                 if not isinstance(active,bool): return self._json(400,{"error":"El estado debe ser verdadero o falso."})

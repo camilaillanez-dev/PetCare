@@ -1,5 +1,5 @@
-const CACHE_NAME='petcare-shell-v2';
-const APP_SHELL=['/','/index.html','/landing.css','/landing.js','/portal.html','/portal.css','/portal.js','/manifest.webmanifest','/icons/petcare.svg','/icons/petcare-180.png','/icons/petcare-192.png','/icons/petcare-512.png'];
+const CACHE_NAME='petcare-shell-v3';
+const APP_SHELL=['/','/index.html','/landing.css','/landing.js','/theme.js','/portal.html','/portal.css','/portal.js','/manifest.webmanifest','/icons/petcare.svg','/icons/petcare-180.png','/icons/petcare-192.png','/icons/petcare-512.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE_NAME).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',event=>{

@@ -37,8 +37,10 @@ También se puede crear una cuenta nueva. Si el teléfono coincide con uno regis
 
 - Crear una cuenta vinculada al teléfono registrado en la clínica.
 - Consultar las mascotas asociadas, los registros que la clínica comparte y las solicitudes de turnos.
+- Consultar un calendario familiar con turnos y recordatorios compartidos, y crear avisos personales para vacunas, controles o medicación.
 - Registrar una mascota, pedir una consulta o teleconsulta y elegir entre horarios disponibles.
 - Instalar en la pantalla de inicio y abrir en modo app.
+- Elegir tema claro u oscuro; la selección queda guardada en el dispositivo.
 - Las solicitudes quedan pendientes hasta que la clínica las confirme.
 - La opción “Emergencia” genera una alerta prioritaria y recuerda acudir a la clínica o a una guardia, sin esperar un turno común.
 
@@ -46,9 +48,12 @@ También se puede crear una cuenta nueva. Si el teléfono coincide con uno regis
 
 - Directorio y registro de pacientes.
 - Agenda con horarios libres, detección de superposiciones y duración por tipo de consulta.
+- Calendario clínico para vacunas, controles y recordatorios del equipo, con opción de compartir cada aviso con el tutor.
+- Inventario con mínimos, vencimientos y un historial auditable de entradas, salidas y ajustes de saldo.
 - Duraciones iniciales: vacunación 15 min, control 20 min, consulta general 30 min, teleconsulta 25 min, estudio diagnóstico 45 min y procedimiento 60 min. El equipo puede ajustar la duración al crear cada turno.
 - Emergencias marcadas como atención inmediata, fuera de la agenda habitual y visibles en el inbox prioritario.
 - Inbox, recordatorios y borradores SOAP guardados localmente.
+- Tema claro u oscuro para el sitio, el panel clínico y el portal de tutores.
 
 ## Alcance y seguridad
 
@@ -60,7 +65,7 @@ El sitio del repositorio no es, por sí solo, un despliegue público: PetCare ne
 
 - `index.html`, `landing.css`, `landing.js`: sitio público.
 - `portal.html`, `portal.css`, `portal.js`: portal instalable para tutores.
-- `manifest.webmanifest`, `service-worker.js`, `icons/`: instalación y caché de la app (iconos PNG para Android/iPhone y SVG).
+- `manifest.webmanifest`, `service-worker.js`, `icons/`: instalación, tema visual y caché de la app (iconos PNG para Android/iPhone y SVG).
 - `clinic.html`, `styles.css`, `app.js`: panel clínico.
 - `server.py`: API, sesiones, disponibilidad y persistencia SQLite.
 - `Iniciar PetCare.bat`: lanzador para Windows.
