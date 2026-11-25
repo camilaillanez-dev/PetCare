@@ -3,7 +3,7 @@ setlocal
 cd /d "%~dp0"
 
 rem Reuse an already-running local instance when possible.
-powershell -NoProfile -Command "try { Invoke-RestMethod 'http://127.0.0.1:8765/api/health' -TimeoutSec 1 | Out-Null; exit 0 } catch { exit 1 }"
+powershell -NoProfile -Command "try { Invoke-RestMethod 'http://localhost:8765/api/health' -TimeoutSec 1 | Out-Null; exit 0 } catch { exit 1 }"
 if not errorlevel 1 goto open_app
 
 rem Prefer the Python runtime bundled with Codex; fall back to Python Launcher.
@@ -28,5 +28,5 @@ if "%PETCARE_PY%"=="py -3" (
 timeout /t 2 /nobreak >nul
 
 :open_app
-start "" "http://127.0.0.1:8765/clinic.html"
+start "" "http://localhost:8765/clinic.html"
 endlocal

@@ -6,10 +6,10 @@ PetCare es una plataforma veterinaria con tres espacios conectados: el sitio pú
 
 Hacé doble clic en `Iniciar PetCare.bat`. El lanzador inicia el servidor local y abre el panel clínico.
 
-- Sitio público: `http://127.0.0.1:8765/`
-- App / portal de tutores: `http://127.0.0.1:8765/portal.html`
-- Panel clínico: `http://127.0.0.1:8765/clinic.html`
-- Estado del servidor: `http://127.0.0.1:8765/api/health`
+- Sitio público: `http://localhost:8765/`
+- App / portal de tutores: `http://localhost:8765/portal.html`
+- Panel clínico: `http://localhost:8765/clinic.html`
+- Estado del servidor: `http://localhost:8765/api/health`
 
 También podés ejecutar `python server.py` desde esta carpeta. La primera ejecución crea `data/petcare.sqlite3` con pacientes, tutores e historiales ficticios.
 

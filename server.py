@@ -623,7 +623,7 @@ class Handler(SimpleHTTPRequestHandler):
 
 if __name__=="__main__":
     init_db()
-    print(f"PetCare listo en http://{HOST}:{PORT}")
+    print(f"PetCare listo en http://localhost:{PORT}")
     print("Base local SQLite: data/petcare.sqlite3")
     ThreadingHTTPServer((HOST,PORT),Handler).serve_forever()
 
