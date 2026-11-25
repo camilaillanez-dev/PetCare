@@ -47,3 +47,39 @@ body{background:radial-gradient(ellipse at 88% 1%,#edf4ea 0,transparent 28%),var
 :root[data-theme="dark"] .btn-soft{background:#26364b;color:#bfdbfe}
 :root[data-theme="dark"] .month-day,:root[data-theme="dark"] .month-weekday,:root[data-theme="dark"] .event-date{background:#1e232b;color:var(--ink)}
 :root[data-theme="dark"] .movement-symbol{background:#26364b;color:#93c5fd}
+
+/* PetCare Verde Futurista: consola clínica clara con identidad viva */
+:root{--ink:#123226;--muted:#657e70;--line:#dcebe1;--paper:#fbfefc;--canvas:#f2faf5;--green:#16875e;--green2:#e2f8eb;--lime:#c9f56a;--orange:#f29b70;--rose:#f8e8df;--shadow:0 14px 38px #173d2a12}
+:root body{background:radial-gradient(ellipse at 88% 1%,#e3f6d6 0,transparent 30%),var(--canvas);color:var(--ink)}
+.sidebar{background:linear-gradient(180deg,#103d2b,#0a281c);color:#effff3;border-color:#174b34}
+.sidebar .brand,.sidebar .brand small{color:#effff3}.sidebar .brand-mark{background:linear-gradient(145deg,#c9f56a,#63e19f);color:#10442c;box-shadow:0 6px 20px #64d99136}
+.nav-item{color:#bdd9c6}.nav-item.active{background:#c9f56a;color:#16432e;box-shadow:inset 3px 0 #efffae,0 7px 18px #061a1055}
+.nav-item:hover{background:#ffffff12;color:#f3fff6}
+.clinic-switch{background:#174632;color:#eafff0;border-color:#286142}
+.sidebar-bottom,.sidebar-bottom a{color:#bdd9c6}
+.topbar{backdrop-filter:blur(14px);background:#fbfefced;border-color:#dcebe1}
+.connection-pill{background:#edf9ef;border-color:#d7eddd;color:#487a59}.connection-pill.online{background:#dcf8e5;border-color:#c2edcf;color:#177348}
+.btn-primary,.btn-green,.btn-submit,.primary-action,.btn:not(.btn-outline):not(.btn-soft){background:linear-gradient(110deg,#147a53,#24ad70);border-color:#16875e;color:#fff;box-shadow:0 7px 18px #16875e20}
+.btn-primary:hover,.btn-green:hover,.btn-submit:hover,.primary-action:hover,.btn:not(.btn-outline):not(.btn-soft):hover{background:linear-gradient(110deg,#106847,#168b5b)}
+.btn-soft{background:#e2f8eb;color:#176c49;border-color:#d4efdd}
+.nav-item.active:after{background:#c9f56a}
+.stat-card,.panel,.content-card,.calendar-card,.modal,.help-card{border-color:#dcebe1;box-shadow:0 12px 32px #173d2a0c;border-radius:16px}
+.stat-icon,.alert-card,.safety-note,.kpi-box,.day-column{background:#e2f8eb;color:#19784f;border-color:#d2eddb}
+.data-table th{background:#f0f8f2;color:#537060}.data-table tr:hover td{background:#f7fcf8}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline-color:#54c987;box-shadow:0 0 0 3px #39c37c20}
+.toggle{accent-color:#16875e}.movement-symbol{background:#e2f8eb;color:#16875e}.movement-qty{color:#16875e}
+:root[data-theme="dark"]{--ink:#eafff0;--muted:#a8c5b1;--line:#294936;--paper:#12251a;--canvas:#091710;--green:#5bea9b;--green2:#1b3a28;--lime:#c9f56a;--orange:#f29b70;--rose:#59372e;--shadow:0 16px 44px #0004}
+:root[data-theme="dark"] body{background:radial-gradient(ellipse at 88% 1%,#173d2b 0,transparent 32%),var(--canvas);color:var(--ink)}
+:root[data-theme="dark"] .sidebar{background:linear-gradient(180deg,#07180f,#0a2116);border-color:#1d3928}
+:root[data-theme="dark"] .sidebar .brand,:root[data-theme="dark"] .sidebar .brand small{color:#effff3}
+:root[data-theme="dark"] .nav-item{color:#b7d6c0}:root[data-theme="dark"] .nav-item.active{background:#c9f56a;color:#16432e}
+:root[data-theme="dark"] .clinic-switch{background:#132d1d;color:#d9f4e0;border-color:#294936}
+:root[data-theme="dark"] .topbar{background:#0d1d15ed;border-color:#294936}
+:root[data-theme="dark"] .stat-card,:root[data-theme="dark"] .panel,:root[data-theme="dark"] .content-card,:root[data-theme="dark"] .calendar-card,:root[data-theme="dark"] .modal,:root[data-theme="dark"] .help-card{background:#12251a;border-color:#294936;color:#eafff0}
+:root[data-theme="dark"] .stat-icon,:root[data-theme="dark"] .alert-card,:root[data-theme="dark"] .safety-note,:root[data-theme="dark"] .kpi-box,:root[data-theme="dark"] .day-column{background:#1b3a28;color:#bcecc9;border-color:#31553c}
+:root[data-theme="dark"] .data-table th{background:#0f2117;color:#b7d6c0}
+:root[data-theme="dark"] .data-table tr:hover td{background:#173323}
+:root[data-theme="dark"] .btn-outline,:root[data-theme="dark"] .theme-toggle{background:#183524;color:#d8f5df;border-color:#31553c}
+:root[data-theme="dark"] .btn-soft{background:#183524;color:#bcecc9;border-color:#31553c}
+:root[data-theme="dark"] .form-group input,:root[data-theme="dark"] .form-group select,:root[data-theme="dark"] .form-group textarea{background:#0b1b12;color:#eafff0;border-color:#31533b}
+:root[data-theme="dark"] .movement-symbol{background:#1b3a28;color:#83edaa}
