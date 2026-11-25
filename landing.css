@@ -83,3 +83,11 @@ body{background:radial-gradient(ellipse at 88% 4%,#dcf8e8 0,transparent 32%),rad
 :root[data-theme="dark"] .panel-metrics>span{background:#183524;border-color:#31553c}
 :root[data-theme="dark"] .panel-metrics>span b{color:#eafff0}:root[data-theme="dark"] .panel-metrics>span small{color:#a8c5b1}
 :root[data-theme="dark"] .art-orbit{border-color:#41875a}.art-orbit{border-color:#aed9b8}.orbit-two{border-color:#c6e3a7}
+.art-blob{overflow:hidden}.art-pet-photo{display:block;width:100%;height:100%;object-fit:cover;object-position:center 45%;border-radius:inherit;filter:none;transform:scale(1.035)}
+.art-blob:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,#063d2310 55%,#063d232e);pointer-events:none}
+.avatar-stack{gap:0}.avatar-stack img{display:block;width:35px;height:35px;object-fit:cover;border:2px solid #f9fffb;border-radius:50%;margin-left:-6px;box-shadow:0 3px 10px #123b2b22}
+.phone-pet>img{width:39px;height:39px;flex:none;object-fit:cover;border-radius:11px}
+.panel-paw svg{display:block;width:100%;height:100%;fill:currentColor}
+:root[data-theme="dark"] .avatar-stack img{border-color:#0c1c14}
+.photo-credit{font-size:9px;color:#819789}.photo-credit a{text-decoration:underline;text-underline-offset:2px}
+:root[data-theme="dark"] .photo-credit{color:#a5c1ae}
